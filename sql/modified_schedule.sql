@@ -1,1 +1,0 @@
-alter table Schedule add column doctor_id INT;
