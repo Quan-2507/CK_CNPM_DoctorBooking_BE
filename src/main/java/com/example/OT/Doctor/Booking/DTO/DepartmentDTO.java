@@ -1,5 +1,4 @@
 package com.example.OT.Doctor.Booking.DTO;
-import com.example.OT.Doctor.Booking.Entity.Symptom;
 
 import com.example.OT.Doctor.Booking.Entity.Department;
 import lombok.Getter;
@@ -18,5 +17,4 @@ public class DepartmentDTO {
                 .map(SymptomDTO::new)
                 .collect(Collectors.toList());
     }
-
 }
