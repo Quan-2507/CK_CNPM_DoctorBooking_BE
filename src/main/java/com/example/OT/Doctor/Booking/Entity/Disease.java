@@ -1,18 +1,14 @@
 package com.example.OT.Doctor.Booking.Entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Entity
-@Table(name = "departments")
+@Table(name = "diseases")
 @Getter
 @Setter
-public class Department {
+public class Disease {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,7 +16,6 @@ public class Department {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "departments")
-    @JsonBackReference
-    private Set<Symptom> symptoms = new HashSet<>();
+    @Column(name = "description")
+    private String description;
 }

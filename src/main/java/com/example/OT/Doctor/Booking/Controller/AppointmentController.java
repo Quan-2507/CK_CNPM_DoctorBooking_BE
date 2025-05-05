@@ -1,6 +1,5 @@
 package com.example.OT.Doctor.Booking.Controller;
 
-
 import com.example.OT.Doctor.Booking.DTO.AppointmentResponse;
 import com.example.OT.Doctor.Booking.DTO.BookAppointmentRequest;
 import com.example.OT.Doctor.Booking.Service.AppointmentService;
@@ -30,7 +29,7 @@ public class AppointmentController {
 
     @GetMapping("/users/{userId}")
     public ResponseEntity<List<AppointmentResponse>> getUserAppointments(
-            @PathVariable Integer userId) {
+            @PathVariable Long userId) {
         List<AppointmentResponse> appointments = bookingService.getUserAppointments(userId);
         return appointments.isEmpty()
                 ? ResponseEntity.noContent().build()

@@ -23,47 +23,46 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF (nếu dùng JWT)
-                .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/user/profile", true)
-                )
-                // Cấu hình phân quyền
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép truy cập Swagger mà không cần xác thực
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/swagger-ui.html",
-                                "/api/**"
-//                                "/api/auth/signup",
-//                                "/api/auth/login",
-//                                "/departments/symptoms",
-//                                "/api/symptoms",
-//                                "/api/doctors/searchByName",
-//                                "/api/doctors/department/{departmentId}",
-//                                "/api/doctors",
-//                                "/api/bookings",
-//                                "/api/bookings/users/{userId}"
-
-
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/symptoms",
+                                "/api/symptoms/search",
+                                "/api/doctors/searchByName",
+                                "/api/doctors/department/{departmentId}",
+                                "/api/doctors",
+                                "/api/schedules/**"
                         ).permitAll()
-                        .anyRequest().authenticated() // Các API khác yêu cầu xác thực
-                );
+                        .requestMatchers("/api/bookings/**").authenticated()
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // Cho phép frontend
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

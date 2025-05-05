@@ -1,80 +1,46 @@
 package com.example.OT.Doctor.Booking.Entity;
 
-import com.example.OT.Doctor.Booking.Entity.Department;
 import jakarta.persistence.*;
-@Entity
-@Table(name = "Doctors")
-public class Doctor {
+import lombok.Getter;
+import lombok.Setter;
 
+@Entity
+@Table(name = "doctors")
+@Getter
+@Setter
+public class Doctor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", nullable = false)
     private String name;
-    private int experienceYears;
-    private String degree;
-    private int consultationHours;
-    private String imageUrl;
 
     @ManyToOne
-    @JoinColumn(name = "department_id", nullable = false)  // Liên kết với Department
+    @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    // Getter và Setter
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
-    public Long getId() {
-        return id;
-    }
+    @Column(name = "email")
+    private String email;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Column(name = "experience_years")
+    private Integer experienceYears;
 
-    public String getName() {
-        return name;
-    }
+    @Column(name = "degree")
+    private String degree;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Column(name = "consultation_hours")
+    private Integer consultationHours;
 
-    public int getExperienceYears() {
-        return experienceYears;
-    }
+    @Column(name = "rating")
+    private Float rating;
 
-    public void setExperienceYears(int experienceYears) {
-        this.experienceYears = experienceYears;
-    }
+    @Column(name = "about")
+    private String about;
 
-    public String getDegree() {
-        return degree;
-    }
-
-    public void setDegree(String degree) {
-        this.degree = degree;
-    }
-
-    public int getConsultationHours() {
-        return consultationHours;
-    }
-
-    public void setConsultationHours(int consultationHours) {
-        this.consultationHours = consultationHours;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public Department getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(Department department) {
-        this.department = department;
-    }
+    @Column(name = "image_url")
+    private String imageUrl;
 }

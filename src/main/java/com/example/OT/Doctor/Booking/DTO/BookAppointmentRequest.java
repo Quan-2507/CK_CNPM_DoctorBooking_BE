@@ -1,24 +1,24 @@
 package com.example.OT.Doctor.Booking.DTO;
 
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 public class BookAppointmentRequest {
     @NotNull(message = "User ID is required")
-    private Integer userId;
+    private Long userId;
 
     @NotNull(message = "Doctor ID is required")
-    private Integer doctorId;
+    private Long doctorId;
 
-    @NotNull(message = "Appointment date is required")
-    private Date appointmentDate;
+    @NotNull(message = "Schedule ID is required")
+    private Long scheduleId;
+
+    @NotNull(message = "Appointment time is required")
+    private LocalDateTime appointmentTime;
+
+    private String symptomDescription;
+    private Long diseaseId;
 }
-

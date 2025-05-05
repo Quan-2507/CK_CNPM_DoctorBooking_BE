@@ -4,16 +4,16 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @Builder
-
 public class AppointmentResponse {
-    private Integer id;
-    private Integer userId;
-    private Integer doctorId;
-    private Date appointmentDate;
+    private Long id;
+    private Long userId;
+    private Long doctorId;
+    private String doctorName;
+    private LocalDateTime appointmentTime;
+    private Integer appointmentNumber; // Số thứ tự
     private String status;
-    private Date createdAt;
+    private LocalDateTime createdAt;
 }
