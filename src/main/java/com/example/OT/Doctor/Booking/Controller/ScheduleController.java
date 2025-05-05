@@ -17,9 +17,6 @@ public class ScheduleController {
         this.scheduleService = scheduleService;
     }
 
-    /**
-     * Lấy tất cả lịch còn chỗ trống
-     */
     @GetMapping("/available")
     public ResponseEntity<List<Schedule>> getAllAvailableSchedules() {
         List<Schedule> schedules = scheduleService.getAllAvailableSchedules();
@@ -28,13 +25,9 @@ public class ScheduleController {
                 : ResponseEntity.ok(schedules);
     }
 
-    /**
-     * Lấy lịch còn chỗ trống theo ID bác sĩ
-     * @param doctorId ID của bác sĩ (required)
-     */
     @GetMapping("/doctors/{doctorId}/available")
     public ResponseEntity<List<Schedule>> getAvailableSchedulesByDoctor(
-            @PathVariable Integer doctorId) {
+            @PathVariable Long doctorId) {
         List<Schedule> schedules = scheduleService.getAvailableSchedulesByDoctor(doctorId);
         return schedules.isEmpty()
                 ? ResponseEntity.noContent().build()

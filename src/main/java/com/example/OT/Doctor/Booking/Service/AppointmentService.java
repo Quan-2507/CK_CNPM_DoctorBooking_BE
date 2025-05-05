@@ -2,74 +2,109 @@ package com.example.OT.Doctor.Booking.Service;
 
 import com.example.OT.Doctor.Booking.DTO.AppointmentResponse;
 import com.example.OT.Doctor.Booking.DTO.BookAppointmentRequest;
-import com.example.OT.Doctor.Booking.Entity.Appointment;
+import com.example.OT.Doctor.Booking.Entity.*;
 import com.example.OT.Doctor.Booking.Exception.BookingConflictException;
-import com.example.OT.Doctor.Booking.Repository.AppointmentRepository;
+import com.example.OT.Doctor.Booking.Repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service // Đánh dấu lớp này là một service trong Spring, giúp quản lý logic nghiệp vụ.
-@RequiredArgsConstructor // Tự động tạo constructor với các dependency được đánh dấu là final.
+@Service
+@RequiredArgsConstructor
 public class AppointmentService {
-    private final AppointmentRepository appointmentRepository; // Repository dùng để thao tác với cơ sở dữ liệu.
 
-    /**
-     * Đặt lịch hẹn mới.
-     * @param request Thông tin đặt lịch hẹn.
-     * @return AppointmentResponse Đối tượng phản hồi chứa thông tin lịch hẹn đã đặt.
-     */
-     // Đảm bảo tính toàn vẹn dữ liệu: nếu có lỗi, toàn bộ thao tác sẽ bị rollback.
+    private final AppointmentRepository appointmentRepository;
+    private final UserRepository userRepository;
+    private final DoctorRepository doctorRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final DiseaseRepository diseaseRepository;
+
+    @Transactional
     public AppointmentResponse bookAppointment(BookAppointmentRequest request) {
-        // Kiểm tra xem bác sĩ đã có lịch hẹn vào thời gian này chưa
-        if (appointmentRepository.existsByDoctorIdAndAppointmentDate(
-                request.getDoctorId(), request.getAppointmentDate())) {
-            throw new BookingConflictException("This time slot is already booked"); // Nếu đã có lịch, ném ngoại lệ.
+        // Kiểm tra user
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Kiểm tra bác sĩ
+        Doctor doctor = doctorRepository.findById(request.getDoctorId())
+                .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+
+        // Kiểm tra lịch
+        Schedule schedule = scheduleRepository.findById(request.getScheduleId())
+                .orElseThrow(() -> new IllegalArgumentException("Schedule not found"));
+
+        Disease disease = null;
+        if (request.getDiseaseId() != null) {
+            disease = diseaseRepository.findById(request.getDiseaseId())
+                    .orElseThrow(() -> new IllegalArgumentException("Disease not found"));
         }
 
-        // Tạo một đối tượng lịch hẹn mới với trạng thái "CONFIRMED"
+        // Kiểm tra trùng lịch
+        if (appointmentRepository.existsByDoctorIdAndAppointmentTime(doctor.getId(), request.getAppointmentTime())) {
+            throw new BookingConflictException("This time slot is already booked");
+        }
+
+        // Kiểm tra số ghế còn lại
+        if (schedule.getRemainingSeats() <= 0) {
+            throw new IllegalArgumentException("No available seats for this schedule");
+        }
+
+        // Tính số thứ tự
+        List<Appointment> existingAppointments = appointmentRepository.findByScheduleId(schedule.getId());
+        int appointmentNumber = existingAppointments.size() + 1;
+
+        // Tạo lịch hẹn
         Appointment appointment = Appointment.builder()
-                .userId(request.getUserId())
-                .doctorId(request.getDoctorId())
-                .appointmentDate(request.getAppointmentDate())
-                .status("CONFIRMED") // Mặc định trạng thái là "CONFIRMED".
+                .user(user)
+                .doctor(doctor)
+                .schedule(schedule)
+                .disease(disease)
+                .appointmentTime(request.getAppointmentTime())
+                .appointmentDate(request.getAppointmentTime().toLocalDate().atStartOfDay()) // hoặc .toLocalDate() nếu dùng LocalDate
+                .symptomDescription(request.getSymptomDescription())
+                .status(Appointment.Status.SCHEDULED)
+                .paymentStatus(Appointment.PaymentStatus.PENDING)
+                .appointmentNumber(appointmentNumber)
                 .build();
 
-        // Lưu lịch hẹn vào database
+
+        // Giảm số ghế còn lại
+        schedule.setRemainingSeats(schedule.getRemainingSeats() - 1);
+        scheduleRepository.save(schedule);
+
+        // Lưu lịch hẹn
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        // Chuyển đổi đối tượng lịch hẹn sang dạng phản hồi và trả về kết quả.
-        return convertToResponse(savedAppointment);
-    }
-
-    /**
-     * Lấy danh sách lịch hẹn của người dùng.
-     * @param userId ID của người dùng.
-     * @return Danh sách lịch hẹn đã đặt theo thứ tự giảm dần của ngày hẹn.
-     */
-    public List<AppointmentResponse> getUserAppointments(Integer userId) {
-        return appointmentRepository.findByUserIdOrderByAppointmentDateDesc(userId)
-                .stream()
-                .map(this::convertToResponse) // Chuyển đổi từng lịch hẹn thành DTO phản hồi.
-                .collect(Collectors.toList()); // Thu thập kết quả vào danh sách.
-    }
-
-    /**
-     * Chuyển đổi từ đối tượng lịch hẹn (Entity) sang phản hồi (DTO).
-     * @param appointment Đối tượng lịch hẹn.
-     * @return Đối tượng phản hồi AppointmentResponse.
-     */
-    private AppointmentResponse convertToResponse(Appointment appointment) {
+        // Trả về response
         return AppointmentResponse.builder()
-                .id(appointment.getId())
-                .userId(appointment.getUserId())
-                .doctorId(appointment.getDoctorId())
-                .appointmentDate(appointment.getAppointmentDate())
-                .status(appointment.getStatus())
-                .createdAt(appointment.getCreatedAt()) // Lấy thông tin ngày tạo lịch hẹn.
+                .id(savedAppointment.getId())
+                .userId(savedAppointment.getUser().getId())
+                .doctorId(savedAppointment.getDoctor().getId())
+                .doctorName(savedAppointment.getDoctor().getName())
+                .appointmentTime(savedAppointment.getAppointmentTime())
+                .appointmentNumber(savedAppointment.getAppointmentNumber())
+                .status(savedAppointment.getStatus().name())
+                .createdAt(savedAppointment.getCreatedAt())
                 .build();
+    }
+
+    public List<AppointmentResponse> getUserAppointments(Long userId) {
+        return appointmentRepository.findByUserIdOrderByAppointmentTimeDesc(userId)
+                .stream()
+                .map(appointment -> AppointmentResponse.builder()
+                        .id(appointment.getId())
+                        .userId(appointment.getUser().getId())
+                        .doctorId(appointment.getDoctor().getId())
+                        .doctorName(appointment.getDoctor().getName())
+                        .appointmentTime(appointment.getAppointmentTime())
+                        .appointmentNumber(appointment.getAppointmentNumber())
+                        .status(appointment.getStatus().name())
+                        .createdAt(appointment.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

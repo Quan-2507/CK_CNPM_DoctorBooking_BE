@@ -5,10 +5,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
-@Table(name = "appointments", schema = "public")
+@Table(name = "appointments")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,22 +16,66 @@ import java.util.Date;
 public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id; // Giữ nguyên Integer vì database dùng integer
+    private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "doctor_id", nullable = false)
-    private Integer doctorId;
+    @ManyToOne
+    @JoinColumn(name = "doctor_id", nullable = false)
+    private Doctor doctor;
 
-    @Column(name = "appointment_date", nullable = false)
-    private Date appointmentDate;
+    @ManyToOne
+    @JoinColumn(name = "schedule_id")
+    private Schedule schedule;
 
-    @Column(name = "status", nullable = false, length = 255)
-    private String status;
+    @ManyToOne
+    @JoinColumn(name = "disease_id")
+    private Disease disease;
+
+    @Column(name = "appointment_time")
+    private LocalDateTime appointmentTime;
+
+    @Column(name = "symptom_description")
+    private String symptomDescription;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    @Column(name = "payment_status")
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private Date createdAt;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "appointment_date", nullable = false)
+    private LocalDateTime appointmentDate;
+
+
+    @Column(name = "appointment_number")
+    private Integer appointmentNumber; // Số thứ tự của lịch hẹn
+
+    public enum Status {
+        SCHEDULED, CANCELLED, COMPLETED
+    }
+
+    public enum PaymentStatus {
+        PENDING, PAID, CANCELLED
+    }
 }
