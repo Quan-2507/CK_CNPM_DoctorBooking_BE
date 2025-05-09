@@ -21,28 +21,23 @@ public class Prescription {
     private Appointment appointment;
 
     @ManyToOne
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private Doctor doctor;
-
-    @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
     private User patient;
 
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @ManyToOne
+    @JoinColumn(name = "doctor_id", nullable = false)
+    private Doctor doctor;
+
+    @Column(name = "note")
+    private String note;
 
     @Column(name = "total_cost")
     private Double totalCost;
 
     @Column(name = "status")
-    @Enumerated(EnumType.STRING)
-    private Status status;
+    private String status = "ACTIVE";
 
-    @Column(name = "note")
-    private String note;
-
-    public enum Status {
-        ACTIVE, CANCELLED
-    }
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

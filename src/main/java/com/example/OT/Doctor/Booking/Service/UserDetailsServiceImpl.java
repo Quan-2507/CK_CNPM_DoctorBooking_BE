@@ -1,8 +1,11 @@
 package com.example.OT.Doctor.Booking.Service;
 
+import com.example.OT.Doctor.Booking.DTO.UserEditDTO;
+import com.example.OT.Doctor.Booking.DTO.UserInfoDTO;
 import com.example.OT.Doctor.Booking.Entity.User;
 import com.example.OT.Doctor.Booking.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
+
     @Autowired
     UserRepository userRepository;
 
@@ -19,8 +23,59 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
-// Chuyển đổi từ User (Entity) -> UserDetails (Spring Security)
         return UserDetailsImpl.build(user);
     }
 
+    public UserInfoDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        return new UserInfoDTO(
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getUsername(),
+                user.getGender() != null ? user.getGender().name() : null
+        );
+    }
+    @Transactional
+    public UserInfoDTO editUser(String username, UserEditDTO userEditDTO) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+
+        // Kiểm tra email nếu thay đổi
+        if (userEditDTO.getEmail() != null && !userEditDTO.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(userEditDTO.getEmail())) {
+                throw new RuntimeException("Email đã được sử dụng");
+            }
+            user.setEmail(userEditDTO.getEmail());
+        }
+
+        // Kiểm tra username nếu thay đổi
+        if (userEditDTO.getUsername() != null && !userEditDTO.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(userEditDTO.getUsername())) {
+                throw new RuntimeException("Username đã được sử dụng");
+            }
+            user.setUsername(userEditDTO.getUsername());
+        }
+
+        // Cập nhật phoneNumber
+        if (userEditDTO.getPhoneNumber() != null) {
+            user.setPhoneNumber(userEditDTO.getPhoneNumber());
+        }
+// Cập nhật gender
+        if (userEditDTO.getGender() != null) {
+            user.setGender(userEditDTO.getGender());
+        }
+
+        // Lưu thay đổi
+        userRepository.save(user);
+
+        // Trả về thông tin người dùng đã cập nhật
+        return new UserInfoDTO(
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getUsername(),
+                user.getGender() != null ? user.getGender().name() : null
+        );
+
+    }
 }
