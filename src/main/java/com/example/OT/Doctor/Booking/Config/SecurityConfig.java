@@ -40,6 +40,8 @@ public class SecurityConfig {
                                 "/api/doctors/searchByName",
                                 "/api/doctors/department/{departmentId}",
                                 "/api/doctors",
+                                "/api/doctors/{id}",
+                                "api/users/{id}",
                                 "/api/schedules/**"
                         ).permitAll()
                         .requestMatchers("/api/bookings/**").authenticated()
