@@ -64,6 +64,10 @@ public class Appointment {
     @Column(name = "note")
     private String note;
 
+    @Column(name = "appointment_date", nullable = false)
+    private LocalDateTime appointmentDate;
+
+
     @Column(name = "appointment_number")
     private Integer appointmentNumber; // Số thứ tự của lịch hẹn
 

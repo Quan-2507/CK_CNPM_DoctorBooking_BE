@@ -2,15 +2,9 @@ package com.example.OT.Doctor.Booking.Service;
 
 import com.example.OT.Doctor.Booking.DTO.AppointmentResponse;
 import com.example.OT.Doctor.Booking.DTO.BookAppointmentRequest;
-import com.example.OT.Doctor.Booking.Entity.Appointment;
-import com.example.OT.Doctor.Booking.Entity.Doctor;
-import com.example.OT.Doctor.Booking.Entity.Schedule;
-import com.example.OT.Doctor.Booking.Entity.User;
+import com.example.OT.Doctor.Booking.Entity.*;
 import com.example.OT.Doctor.Booking.Exception.BookingConflictException;
-import com.example.OT.Doctor.Booking.Repository.AppointmentRepository;
-import com.example.OT.Doctor.Booking.Repository.DoctorRepository;
-import com.example.OT.Doctor.Booking.Repository.ScheduleRepository;
-import com.example.OT.Doctor.Booking.Repository.UserRepository;
+import com.example.OT.Doctor.Booking.Repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +21,7 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
     private final ScheduleRepository scheduleRepository;
+    private final DiseaseRepository diseaseRepository;
 
     @Transactional
     public AppointmentResponse bookAppointment(BookAppointmentRequest request) {
@@ -41,6 +36,12 @@ public class AppointmentService {
         // Kiểm tra lịch
         Schedule schedule = scheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new IllegalArgumentException("Schedule not found"));
+
+        Disease disease = null;
+        if (request.getDiseaseId() != null) {
+            disease = diseaseRepository.findById(request.getDiseaseId())
+                    .orElseThrow(() -> new IllegalArgumentException("Disease not found"));
+        }
 
         // Kiểm tra trùng lịch
         if (appointmentRepository.existsByDoctorIdAndAppointmentTime(doctor.getId(), request.getAppointmentTime())) {
@@ -61,12 +62,15 @@ public class AppointmentService {
                 .user(user)
                 .doctor(doctor)
                 .schedule(schedule)
+                .disease(disease)
                 .appointmentTime(request.getAppointmentTime())
+                .appointmentDate(request.getAppointmentTime().toLocalDate().atStartOfDay()) // hoặc .toLocalDate() nếu dùng LocalDate
                 .symptomDescription(request.getSymptomDescription())
                 .status(Appointment.Status.SCHEDULED)
                 .paymentStatus(Appointment.PaymentStatus.PENDING)
                 .appointmentNumber(appointmentNumber)
                 .build();
+
 
         // Giảm số ghế còn lại
         schedule.setRemainingSeats(schedule.getRemainingSeats() - 1);

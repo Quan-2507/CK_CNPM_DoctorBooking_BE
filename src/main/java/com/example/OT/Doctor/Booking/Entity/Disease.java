@@ -13,9 +13,12 @@ public class Disease {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "name_vi", nullable = false, length = 100)
+    private String nameVi;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 255)
     private String description;
+
+    @Column(name = "name_en", length = 100)
+    private String nameEn;
 }

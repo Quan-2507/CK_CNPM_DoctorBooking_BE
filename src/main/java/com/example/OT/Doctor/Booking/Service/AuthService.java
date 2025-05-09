@@ -43,7 +43,7 @@ public class AuthService {
         user.setEmail(signUpRequest.getEmail());
         user.setPhoneNumber(signUpRequest.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        user.setRole(Role.ROLE_PATIENT);
+        user.setRole(Role.PATIENT);
         user.setStatus(User.Status.ACTIVE);
 
         userRepository.save(user);
