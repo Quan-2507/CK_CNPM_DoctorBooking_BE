@@ -21,6 +21,9 @@ public class PrescriptionDetail {
     @JoinColumn(name = "medicine_id", nullable = false)
     private Medicine medicine;
 
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity;
+
     @Column(name = "dosage")
     private String dosage;
 

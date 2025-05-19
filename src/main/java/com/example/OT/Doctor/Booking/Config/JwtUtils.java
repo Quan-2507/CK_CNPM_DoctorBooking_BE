@@ -19,6 +19,7 @@ public class JwtUtils {
     public String generateJwtToken(User userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("role", "ROLE_" + userDetails.getRole().name()) // Thêm role vào token
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
@@ -43,4 +44,7 @@ public class JwtUtils {
         return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().getSubject();
     }
 
+    public String getClaimFromJwtToken(String token, String claimName) {
+        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().get(claimName, String.class);
+    }
 }

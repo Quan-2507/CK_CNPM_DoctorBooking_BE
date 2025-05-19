@@ -3,11 +3,13 @@ package com.example.OT.Doctor.Booking.Controller;
 import com.example.OT.Doctor.Booking.Config.JwtUtils;
 import com.example.OT.Doctor.Booking.DTO.LoginRequest;
 import com.example.OT.Doctor.Booking.DTO.LoginResponse;
+import com.example.OT.Doctor.Booking.DTO.ResetPaswordRequest;
 import com.example.OT.Doctor.Booking.Service.AuthService;
 import com.example.OT.Doctor.Booking.DTO.SignUpDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -41,9 +43,14 @@ public class AuthController {
         return ResponseEntity.ok("Verification code sent to email");
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestParam String email, @RequestParam String verifyCode, @RequestParam String newPassword) {
-        authService.resetPassword(email, verifyCode, newPassword);
-        return ResponseEntity.ok("Password reset successfully");
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/resetPassword")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPaswordRequest resetPassword) {
+        try {
+            authService.resetPassword(resetPassword);
+            return ResponseEntity.ok("Password changed successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -6,15 +6,23 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
+import java.util.Collections;
+
 public class JwtAuthFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
+
     @Autowired
     private JwtUtils jwtUtils;
 
@@ -30,21 +38,40 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return null;
     }
 
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, java.io.IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            logger.info("JWT Token received: " + jwt);
+            logger.info("JWT Token received: {}", jwt);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUsernameFromJwtToken(jwt);
+                logger.info("Extracted username from token: {}", username);
+
+                // Lấy role từ token
+                String role = jwtUtils.getClaimFromJwtToken(jwt, "role");
+                if (role == null) {
+                    logger.warn("No role found in token for user: {}", username);
+                    throw new IllegalArgumentException("Role not found in token");
+                }
+                logger.info("Role extracted from token: {}", role);
+
+                // Gán quyền từ token
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                logger.info("User authorities from database: {}", userDetails.getAuthorities());
+
+                // Sử dụng quyền từ token
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                        userDetails, null, Collections.singletonList(authority));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.info("Authentication set for user: {} with authorities: {}", username, authentication.getAuthorities());
+            } else {
+                logger.warn("Invalid or missing JWT token");
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+            logger.error("Cannot set user authentication: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);
     }

@@ -43,4 +43,8 @@ public class Doctor {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // Liên kết với User để lấy username và role
 }

@@ -6,8 +6,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Collections;
 
 public class UserDetailsImpl implements UserDetails {
     private Long id;
@@ -25,21 +24,18 @@ public class UserDetailsImpl implements UserDetails {
         this.authorities = authorities;
     }
 
-    // Factory method để convert User -> UserDetailsImpl
     public static UserDetailsImpl build(User user) {
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority(user.getRole().name())
-        );
-
+        // Gán role với prefix "ROLE_"
+        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
         return new UserDetailsImpl(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
-                authorities);
+                Collections.singletonList(authority)
+        );
     }
 
-    // Override các phương thức bắt buộc
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
