@@ -3,12 +3,14 @@ package com.example.OT.Doctor.Booking.Service;
 import com.example.OT.Doctor.Booking.Config.JwtUtils;
 import com.example.OT.Doctor.Booking.DTO.LoginRequest;
 import com.example.OT.Doctor.Booking.DTO.LoginResponse;
+import com.example.OT.Doctor.Booking.DTO.ResetPaswordRequest;
 import com.example.OT.Doctor.Booking.DTO.SignUpDTO;
 import com.example.OT.Doctor.Booking.Entity.User;
 import com.example.OT.Doctor.Booking.Enum.Role;
 import com.example.OT.Doctor.Booking.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -80,17 +82,29 @@ public class AuthService {
         System.out.println("Verification code for " + email + ": " + verifyCode);
     }
 
-    public void resetPassword(String email, String verifyCode, String newPassword) {
-        User user = userRepository.findByEmail(email)
+    public void resetPassword(ResetPaswordRequest resetPaswordRequest) {
+        // Lấy username từ SecurityContext (người dùng đã xác thực)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!verifyCode.equals(user.getVerifyCode()) || user.getVerifyCodeExpiry().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Invalid or expired verification code");
+        // Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(resetPaswordRequest.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setVerifyCode(null);
-        user.setVerifyCodeExpiry(null);
+        // Kiểm tra mật khẩu mới và xác nhận mật khẩu có khớp không
+        if (!resetPaswordRequest.getNewPassword().equals(resetPaswordRequest.getConfirmPassword())) {
+            throw new IllegalArgumentException("Xác nhận mật khẩu không khớp");
+        }
+
+        // Kiểm tra mật khẩu mới không trùng với mật khẩu hiện tại
+        if (passwordEncoder.matches(resetPaswordRequest.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu hiện tại");
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(resetPaswordRequest.getNewPassword()));
         userRepository.save(user);
     }
 }
