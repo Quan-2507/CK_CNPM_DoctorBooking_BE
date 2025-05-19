@@ -50,7 +50,7 @@ public class PrescriptionDTO {
         this.note = note;
     }
 
-    public List<PrgescriptionDetailDTO> getMedicines() {
+    public List<PrescriptionDetailDTO> getMedicines() {
         return medicines;
     }
 
