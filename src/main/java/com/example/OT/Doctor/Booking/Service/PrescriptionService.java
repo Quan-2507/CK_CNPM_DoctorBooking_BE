@@ -1,5 +1,7 @@
 package com.example.OT.Doctor.Booking.Service;
 
+import com.example.OT.Doctor.Booking.DTO.PrescriptionDTO;
+import com.example.OT.Doctor.Booking.DTO.PrescriptionDetailDTO;
 import com.example.OT.Doctor.Booking.DTO.PrescriptionRequestDTO;
 import com.example.OT.Doctor.Booking.DTO.PrescriptionResponseDTO;
 import com.example.OT.Doctor.Booking.Entity.Appointment;
@@ -27,6 +29,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PrescriptionService {
@@ -251,4 +254,35 @@ public class PrescriptionService {
         logger.info("Prescription created successfully for patient: {}", patientName);
         return response;
     }
+
+    @Transactional(readOnly = true)
+    public PrescriptionDTO getPrescriptionDetailsByAppointmentId(Long appointmentId) {
+        Prescription prescription = prescriptionRepository.findActiveByAppointmentIdWithDoctor(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Prescription not found for appointment id: " + appointmentId));
+
+        if (prescription.getDoctor() == null) {
+            throw new IllegalArgumentException("Doctor not found for this prescription");
+        }
+
+        List<PrescriptionDetailDTO> details = prescriptionDetailRepository.findByPrescriptionId(prescription.getId())
+                .stream()
+                .map(detail -> new PrescriptionDetailDTO(
+                        detail.getMedicine().getId(),
+                        detail.getMedicine().getName(),
+                        detail.getDosage(),
+                        detail.getDuration(),
+                        detail.getNote()
+                ))
+                .collect(Collectors.toList());
+
+        return new PrescriptionDTO(
+                prescription.getDoctor().getName(),
+                prescription.getPatient().getUsername(),
+                prescription.getTotalCost(),
+                prescription.getNote(),
+                details
+        );
+    }
+
+
 }
