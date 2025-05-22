@@ -2,6 +2,7 @@ package com.example.OT.Doctor.Booking.Controller;
 
 import com.example.OT.Doctor.Booking.DTO.AppointmentResponse;
 import com.example.OT.Doctor.Booking.DTO.BookAppointmentRequest;
+import com.example.OT.Doctor.Booking.DTO.HistoryAppointmentDTO;
 import com.example.OT.Doctor.Booking.Service.AppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,5 +35,13 @@ public class AppointmentController {
         return appointments.isEmpty()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(appointments);
+    }
+
+    @GetMapping("/history/users/{userId}")
+    public ResponseEntity<List<HistoryAppointmentDTO>> getUserAppointmentHistory(@PathVariable Long userId) {
+        List<HistoryAppointmentDTO> history = bookingService.getHistoryByUserId(userId);
+        return history.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(history);
     }
 }

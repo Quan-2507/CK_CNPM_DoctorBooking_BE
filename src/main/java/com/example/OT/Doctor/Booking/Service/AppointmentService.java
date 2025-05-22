@@ -2,6 +2,7 @@ package com.example.OT.Doctor.Booking.Service;
 
 import com.example.OT.Doctor.Booking.DTO.AppointmentResponse;
 import com.example.OT.Doctor.Booking.DTO.BookAppointmentRequest;
+import com.example.OT.Doctor.Booking.DTO.HistoryAppointmentDTO;
 import com.example.OT.Doctor.Booking.Entity.*;
 import com.example.OT.Doctor.Booking.Exception.BookingConflictException;
 import com.example.OT.Doctor.Booking.Repository.*;
@@ -106,5 +107,9 @@ public class AppointmentService {
                         .createdAt(appointment.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public List<HistoryAppointmentDTO> getHistoryByUserId(Long userId) {
+        return appointmentRepository.findHistoryByUserId(userId);
     }
 }

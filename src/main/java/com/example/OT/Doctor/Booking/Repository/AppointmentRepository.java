@@ -1,5 +1,6 @@
 package com.example.OT.Doctor.Booking.Repository;
 
+import com.example.OT.Doctor.Booking.DTO.HistoryAppointmentDTO;
 import com.example.OT.Doctor.Booking.Entity.Appointment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,4 +16,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("SELECT a FROM Appointment a WHERE a.doctor.id = :doctorId AND a.appointmentTime >= :now ORDER BY a.appointmentTime")
     List<Appointment> findUpcomingByDoctorId(@Param("doctorId") Long doctorId, @Param("now") LocalDateTime now);
+
+    @Query("SELECT new com.example.OT.Doctor.Booking.DTO.HistoryAppointmentDTO(" +
+            "a.appointmentNumber, a.appointmentTime) " +
+            "FROM Appointment a WHERE a.user.id = :userId ORDER BY a.appointmentDate DESC")
+    List<HistoryAppointmentDTO> findHistoryByUserId(@Param("userId") Long userId);
+
 }
