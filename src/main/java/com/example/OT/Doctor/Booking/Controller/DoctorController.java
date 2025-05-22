@@ -7,6 +7,8 @@ import com.example.OT.Doctor.Booking.DTO.PrescriptionResponseDTO;
 import com.example.OT.Doctor.Booking.Entity.Doctor;
 import com.example.OT.Doctor.Booking.Service.DoctorService;
 import com.example.OT.Doctor.Booking.Service.PrescriptionService;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +32,17 @@ public class DoctorController {
     private static final Logger logger = LoggerFactory.getLogger(DoctorController.class);
     @PostMapping("/prescriptions")
     @PreAuthorize("hasRole('DOCTOR')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Kê đơn thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ hoặc không đủ tồn kho"),
+            @ApiResponse(responseCode = "401", description = "Chưa xác thực"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền kê đơn")
+    })
     public ResponseEntity<?> createPrescription(@Valid @RequestBody PrescriptionRequestDTO request) {
-        logger.info("Received prescription request: {}", request);
+        logger.info("Received POST request for /api/doctors/prescriptions: {}", request);
         try {
             PrescriptionResponseDTO response = prescriptionService.createPrescription(request);
+            logger.info("Prescription created successfully with ID: {}", response.getId());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             logger.error("Error creating prescription: {}", e.getMessage());
