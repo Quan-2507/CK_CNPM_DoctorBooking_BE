@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Config\JwtUtils.java
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Config\SecurityConfig.java
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Config\SwaggerConfig.java
@@ -57,3 +59,5 @@ D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Book
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Service\TwoFactorAuthService.java
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Service\UserDetailsImpl.java
 D:\NAM4\DACNPM\CK_CNPM_DoctorBooking_BE\src\main\java\com\example\OT\Doctor\Booking\Service\UserDetailsServiceImpl.java
+
+>>>>>>> a117628ba1a77c3394864ec4f80489a7ccf5a45c
