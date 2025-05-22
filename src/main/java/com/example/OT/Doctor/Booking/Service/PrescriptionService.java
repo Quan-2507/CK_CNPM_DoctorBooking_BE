@@ -237,7 +237,7 @@ public class PrescriptionService {
 
         // Định dạng prescriptionDate từ giờ hiện tại
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("mm:HH dd/MM/yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         String formattedDate = now.format(formatter);
         logger.info("Prescription date set to current time: {}", formattedDate);
 
