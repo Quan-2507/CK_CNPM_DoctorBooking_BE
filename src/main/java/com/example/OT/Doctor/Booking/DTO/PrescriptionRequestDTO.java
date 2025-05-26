@@ -5,24 +5,33 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class PrescriptionRequestDTO {
     @NotNull(message = "ID lịch hẹn không được để trống")
     private Long appointmentId;
 
-    @NotNull(message = "ID thuốc không được để trống")
-    private Long medicineId;
-
     @NotNull(message = "ID bệnh không được để trống")
     private Long diseaseId;
 
-    @Min(value = 1, message = "Số lượng phải lớn hơn 0")
-    private Integer quantity;
+    @NotNull(message = "Danh sách thuốc không được để trống")
+    private List<MedicineDetail> medicines;
 
-    private String dosage; // Liều dùng (ví dụ: 2 viên/ngày)
+    @Getter
+    @Setter
+    public static class MedicineDetail {
+        @NotNull(message = "ID thuốc không được để trống")
+        private Long medicineId;
 
-    private String duration; // Thời gian sử dụng (ví dụ: 5 ngày)
+        @Min(value = 1, message = "Số lượng phải lớn hơn 0")
+        private Integer quantity;
 
-    private String note; // Ghi chú
+        private String dosage; // Liều dùng (ví dụ: 2 viên/ngày)
+
+        private String duration; // Thời gian sử dụng (ví dụ: 5 ngày)
+
+        private String note; // Ghi chú
+    }
 }

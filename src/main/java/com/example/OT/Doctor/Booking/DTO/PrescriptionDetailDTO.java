@@ -1,5 +1,10 @@
 package com.example.OT.Doctor.Booking.DTO;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class PrescriptionDetailDTO {
     private Long medicineId;
     private String medicineName;  // Lấy tên thuốc từ bảng Medicines
@@ -16,44 +21,5 @@ public class PrescriptionDetailDTO {
         this.note = note;
     }
 
-    public Long getMedicineId() {
-        return medicineId;
-    }
-
-    public void setMedicineId(Long medicineId) {
-        this.medicineId = medicineId;
-    }
-
-    public String getMedicineName() {
-        return medicineName;
-    }
-
-    public void setMedicineName(String medicineName) {
-        this.medicineName = medicineName;
-    }
-
-    public String getDosage() {
-        return dosage;
-    }
-
-    public void setDosage(String dosage) {
-        this.dosage = dosage;
-    }
-
-    public String getDuration() {
-        return duration;
-    }
-
-    public void setDuration(String duration) {
-        this.duration = duration;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
 }
 

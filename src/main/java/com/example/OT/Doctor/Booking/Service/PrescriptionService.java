@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,10 +57,58 @@ public class PrescriptionService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         logger.info("Processing prescription request for user: {}", username);
         logger.info("SecurityContext authorities: {}", SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+        logger.info("Request details: appointmentId={}, diseaseId={}, medicines={}",
+                request.getAppointmentId(), request.getDiseaseId(), request.getMedicines());
+
+        // Kiểm tra dữ liệu đầu vào
+        if (request.getAppointmentId() == null || request.getDiseaseId() == null) {
+            logger.error("Invalid request data: appointmentId or diseaseId is null");
+            throw new IllegalArgumentException("Dữ liệu không hợp lệ: ID lịch hẹn hoặc bệnh không được để trống");
+        }
+        if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
+            logger.error("Invalid request data: medicines list is null or empty");
+            throw new IllegalArgumentException("Dữ liệu không hợp lệ: Danh sách thuốc không được để trống");
+        }
+
+        // Kiểm tra từng thuốc trong danh sách
+        for (PrescriptionRequestDTO.MedicineDetail med : request.getMedicines()) {
+            if (med.getMedicineId() == null) {
+                logger.error("Invalid medicine data: medicineId is null");
+                throw new IllegalArgumentException("Dữ liệu không hợp lệ: ID thuốc không được để trống");
+            }
+            if (med.getQuantity() == null || med.getQuantity() <= 0) {
+                logger.error("Invalid medicine data: quantity is invalid for medicineId={}", med.getMedicineId());
+                throw new IllegalArgumentException("Dữ liệu không hợp lệ: Số lượng thuốc phải lớn hơn 0 cho thuốc ID: " + med.getMedicineId());
+            }
+        }
 
         // Tìm lịch hẹn
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
-                .orElseThrow(() -> new IllegalArgumentException("Lịch hẹn không tồn tại"));
+                .orElseThrow(() -> {
+                    logger.error("Appointment not found with ID: {}", request.getAppointmentId());
+                    return new IllegalArgumentException("Lịch hẹn không tồn tại với ID: " + request.getAppointmentId());
+                });
+        logger.info("Found appointment with ID: {}, user_id: {}, doctor_id: {}, disease_id: {}, schedule_id: {}, status: {}, appointment_date: {}",
+                appointment.getId(),
+                appointment.getUser() != null ? appointment.getUser().getId() : null,
+                appointment.getDoctor() != null ? appointment.getDoctor().getId() : null,
+                appointment.getDisease() != null ? appointment.getDisease().getId() : null,
+                appointment.getSchedule() != null ? appointment.getSchedule().getId() : null,
+                appointment.getStatus(),
+                appointment.getAppointmentDate());
+
+        // Kiểm tra trạng thái lịch hẹn
+        if (appointment.getStatus() != Appointment.Status.SCHEDULED) {
+            logger.error("Appointment ID: {} is not in SCHEDULED status, current status: {}", request.getAppointmentId(), appointment.getStatus());
+            throw new IllegalArgumentException("Chỉ có thể kê đơn cho lịch hẹn ở trạng thái SCHEDULED");
+        }
+
+        // Kiểm tra schedule_id nếu có
+        if (appointment.getSchedule() != null && appointment.getSchedule().getId() != null) {
+            logger.info("Schedule found for appointment ID: {}, schedule_id: {}", request.getAppointmentId(), appointment.getSchedule().getId());
+        } else {
+            logger.info("No schedule associated with appointment ID: {}", request.getAppointmentId());
+        }
 
         // Kiểm tra bác sĩ phụ trách lịch hẹn
         Doctor doctor = appointment.getDoctor();
@@ -74,25 +124,20 @@ public class PrescriptionService {
             throw new IllegalArgumentException("Không tìm thấy thông tin user của bác sĩ");
         }
 
-        logger.info("Doctor username: {}", doctorUser.getUsername());
+        logger.info("Doctor username: {}, user_id: {}", doctorUser.getUsername(), doctorUser.getId());
         if (!doctorUser.getUsername().equals(username)) {
-            logger.warn("User {} is not authorized to create prescription for appointment ID: {}", username, request.getAppointmentId());
-            throw new IllegalArgumentException("Bạn không có quyền kê đơn cho lịch hẹn này");
-        }
-
-        // Tìm thuốc
-        Medicine medicine = medicineRepository.findById(request.getMedicineId())
-                .orElseThrow(() -> new IllegalArgumentException("Thuốc không tồn tại"));
-
-        // Kiểm tra số lượng tồn kho
-        if (medicine.getStockQuantity() == null || medicine.getStockQuantity() < request.getQuantity()) {
-            logger.error("Insufficient stock for medicine: {}, requested: {}, available: {}", medicine.getName(), request.getQuantity(), medicine.getStockQuantity());
-            throw new IllegalArgumentException("Không đủ tồn kho cho thuốc: " + medicine.getName());
+            logger.warn("User {} is not authorized to create prescription for appointment ID: {}. Expected doctor username: {}",
+                    username, request.getAppointmentId(), doctorUser.getUsername());
+            throw new IllegalArgumentException("Bạn không có quyền kê đơn cho lịch hẹn này. Yêu cầu username bác sĩ: " + doctorUser.getUsername());
         }
 
         // Tìm bệnh
         Disease disease = diseaseRepository.findById(request.getDiseaseId())
-                .orElseThrow(() -> new IllegalArgumentException("Bệnh không tồn tại"));
+                .orElseThrow(() -> {
+                    logger.error("Disease not found with ID: {}", request.getDiseaseId());
+                    return new IllegalArgumentException("Bệnh không tồn tại với ID: " + request.getDiseaseId());
+                });
+        logger.info("Found disease with ID: {}, name: {}", disease.getId(), disease.getNameVi());
 
         // Lấy thông tin bệnh nhân từ Appointment
         User patient = appointment.getUser();
@@ -101,76 +146,112 @@ public class PrescriptionService {
             throw new IllegalArgumentException("Không tìm thấy thông tin bệnh nhân cho lịch hẹn này");
         }
 
-        // Kiểm tra fullName bắt buộc
-        if (patient.getFullName() == null || patient.getFullName().trim().isEmpty()) {
-            logger.error("Patient full name is missing for user ID: {}", patient.getId());
-            throw new IllegalArgumentException("Tên đầy đủ của bệnh nhân là bắt buộc");
-        }
-
         // Tính tuổi bệnh nhân
         Integer patientAge = null;
         if (patient.getDateOfBirth() != null) {
             patientAge = LocalDate.now().getYear() - patient.getDateOfBirth().getYear();
         } else {
-            logger.error("Patient date of birth is missing for user ID: {}", patient.getId());
-            throw new IllegalArgumentException("Ngày sinh của bệnh nhân là bắt buộc");
+            logger.warn("Patient date of birth is missing for user ID: {}. Using default age: 0", patient.getId());
+            patientAge = 0;
         }
+
+        // Gán tên bệnh nhân bằng username
+        String patientName = patient.getUsername() != null ? patient.getUsername() : "Không xác định";
+        logger.info("Patient username for user ID: {} is: {}", patient.getId(), patientName);
 
         // Tạo đơn thuốc
         Prescription prescription = new Prescription();
         prescription.setAppointment(appointment);
         prescription.setPatient(patient);
         prescription.setDoctor(doctor);
-        prescription.setNote(request.getNote());
-        prescription.setTotalCost(medicine.getPrice() != null ? medicine.getPrice() * request.getQuantity() : 0.0);
+        prescription.setNote(request.getMedicines().stream()
+                .map(med -> "Thuốc: " + med.getMedicineId() + ", " + med.getNote())
+                .reduce("", (a, b) -> a + (a.isEmpty() ? "" : "; ") + b));
         prescription.setStatus("ACTIVE");
+
+        // Tính tổng chi phí
+        double totalCost = 0.0;
+        List<PrescriptionResponseDTO.MedicineDetail> responseMedicines = new ArrayList<>();
+        List<PrescriptionDetail> prescriptionDetails = new ArrayList<>();
+
+        // Xử lý từng thuốc
+        for (PrescriptionRequestDTO.MedicineDetail med : request.getMedicines()) {
+            Medicine medicine = medicineRepository.findById(med.getMedicineId())
+                    .orElseThrow(() -> {
+                        logger.error("Medicine not found with ID: {}", med.getMedicineId());
+                        return new IllegalArgumentException("Thuốc không tồn tại với ID: " + med.getMedicineId());
+                    });
+            logger.info("Found medicine with ID: {}, name: {}, stock_quantity: {}", medicine.getId(), medicine.getName(), medicine.getStockQuantity());
+
+            // Kiểm tra số lượng tồn kho
+            if (medicine.getStockQuantity() == null || medicine.getStockQuantity() < med.getQuantity()) {
+                logger.error("Insufficient stock for medicine: {}, requested: {}, available: {}", medicine.getName(), med.getQuantity(), medicine.getStockQuantity());
+                throw new IllegalArgumentException("Không đủ tồn kho cho thuốc: " + medicine.getName());
+            }
+
+            // Tính chi phí cho thuốc
+            double medicineCost = medicine.getPrice() != null ? medicine.getPrice() * med.getQuantity() : 0.0;
+            totalCost += medicineCost;
+
+            // Cập nhật số lượng tồn kho
+            medicine.setStockQuantity(medicine.getStockQuantity() - med.getQuantity());
+            medicineRepository.save(medicine);
+
+            // Tạo chi tiết đơn thuốc
+            PrescriptionDetail detail = new PrescriptionDetail();
+            detail.setPrescription(prescription);
+            detail.setMedicine(medicine);
+            detail.setQuantity(med.getQuantity());
+            detail.setDosage(med.getDosage());
+            detail.setDuration(med.getDuration());
+            detail.setNote(med.getNote());
+            prescriptionDetails.add(detail);
+
+            // Thêm vào response
+            PrescriptionResponseDTO.MedicineDetail responseMed = new PrescriptionResponseDTO.MedicineDetail();
+            responseMed.setMedicineName(medicine.getName());
+            responseMed.setUnit(medicine.getUnit());
+            responseMed.setQuantity(med.getQuantity());
+            responseMed.setDosage(med.getDosage());
+            responseMed.setDuration(med.getDuration());
+            responseMed.setNote(med.getNote());
+            responseMedicines.add(responseMed);
+        }
+
+        // Gán tổng chi phí
+        prescription.setTotalCost(totalCost);
+
+        // Log id trước khi lưu
+        logger.info("Attempting to save prescription with id: {} (will be generated by database)", prescription.getId());
 
         // Lưu đơn thuốc
         Prescription savedPrescription = prescriptionRepository.save(prescription);
         logger.info("Prescription saved with ID: {}", savedPrescription.getId());
 
-        // Tạo chi tiết đơn thuốc
-        PrescriptionDetail detail = new PrescriptionDetail();
-        detail.setPrescription(savedPrescription);
-        detail.setMedicine(medicine);
-        detail.setQuantity(request.getQuantity());
-        detail.setDosage(request.getDosage());
-        detail.setDuration(request.getDuration());
-        detail.setNote(request.getNote());
-
         // Lưu chi tiết đơn thuốc
-        prescriptionDetailRepository.save(detail);
-        logger.info("Prescription detail saved for prescription ID: {}", savedPrescription.getId());
-
-        // Cập nhật số lượng tồn kho
-        medicine.setStockQuantity(medicine.getStockQuantity() - request.getQuantity());
-        medicineRepository.save(medicine);
-
-        // Định dạng prescriptionDate
-        String formattedDate = null;
-        if (appointment.getAppointmentDate() != null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("mm:HH dd/MM/yyyy");
-            formattedDate = appointment.getAppointmentDate().format(formatter);
-        } else {
-            logger.warn("Appointment date is null for appointment ID: {}", request.getAppointmentId());
+        for (PrescriptionDetail detail : prescriptionDetails) {
+            detail.setPrescription(savedPrescription);
+            prescriptionDetailRepository.save(detail);
+            logger.info("Prescription detail saved for prescription ID: {}, medicine ID: {}", savedPrescription.getId(), detail.getMedicine().getId());
         }
+
+        // Định dạng prescriptionDate từ giờ hiện tại
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String formattedDate = now.format(formatter);
+        logger.info("Prescription date set to current time: {}", formattedDate);
 
         // Tạo response
         PrescriptionResponseDTO response = new PrescriptionResponseDTO();
         response.setId(savedPrescription.getId());
-        response.setPatientName(patient.getFullName());
+        response.setPatientName(patientName);
         response.setPatientAge(patientAge);
         response.setPatientGender(patient.getGender());
         response.setDiseaseNameVi(disease.getNameVi());
-        response.setMedicineName(medicine.getName());
-        response.setUnit(medicine.getUnit());
-        response.setQuantity(request.getQuantity());
-        response.setDosage(request.getDosage());
-        response.setDuration(request.getDuration());
-        response.setNote(request.getNote());
+        response.setMedicines(responseMedicines);
         response.setPrescriptionDate(formattedDate);
 
-        logger.info("Prescription created successfully for patient: {}", patient.getFullName());
+        logger.info("Prescription created successfully for patient: {}", patientName);
         return response;
     }
 

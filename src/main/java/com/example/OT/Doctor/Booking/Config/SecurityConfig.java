@@ -47,6 +47,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/symptoms").permitAll()
                         .requestMatchers("/api/bookings/**").authenticated()
+                        .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
