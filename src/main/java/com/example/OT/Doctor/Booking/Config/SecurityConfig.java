@@ -3,6 +3,7 @@ package com.example.OT.Doctor.Booking.Config;
 import com.example.OT.Doctor.Booking.Filter.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -35,7 +36,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
-                                "/api/symptoms",
+                                "/api/symptoms/**",
                                 "/api/symptoms/search",
                                 "/api/doctors/searchByName",
                                 "/api/doctors/department/{departmentId}",
@@ -44,6 +45,7 @@ public class SecurityConfig {
                                 "api/users/{id}",
                                 "/api/schedules/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/symptoms").permitAll()
                         .requestMatchers("/api/bookings/**").authenticated()
                         .anyRequest().authenticated()
                 )
