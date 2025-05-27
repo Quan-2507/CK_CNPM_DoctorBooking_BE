@@ -12,7 +12,7 @@ public class DepartmentDTO {
     private final List<SymptomDTO> symptoms;
 
     public DepartmentDTO(Department department) {
-        this.departmentName = department.getName();
+        this.departmentName = department.getNameEn(); // hoặc getNameVi() tuỳ bạn
         this.symptoms = department.getSymptoms().stream()
                 .map(SymptomDTO::new)
                 .collect(Collectors.toList());
