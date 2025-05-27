@@ -33,6 +33,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 user.getUsername(),
+                user.getAddress(),
                 user.getGender() != null ? user.getGender().name() : null
         );
     }
@@ -61,6 +62,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (userEditDTO.getPhoneNumber() != null) {
             user.setPhoneNumber(userEditDTO.getPhoneNumber());
         }
+        // Cập nhật address
+        if (userEditDTO.getAddress() != null) {
+            user.setAddress(userEditDTO.getAddress());
+        }
 // Cập nhật gender
         if (userEditDTO.getGender() != null) {
             user.setGender(userEditDTO.getGender());
@@ -74,6 +79,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 user.getUsername(),
+                user.getAddress(),
                 user.getGender() != null ? user.getGender().name() : null
         );
 

@@ -10,13 +10,15 @@ public class UserEditDTO {
     private String email;
     private String phoneNumber;
     private String username;
+    private String address;
     private User.Gender gender;
 
     // Constructor
-    public UserEditDTO(String email, String phoneNumber, String username, User.Gender gender) {
+    public UserEditDTO(String email, String phoneNumber, String username, String address,User.Gender gender) {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.username = username;
+        this.address = address;
         this.gender = gender;
     }
 }
