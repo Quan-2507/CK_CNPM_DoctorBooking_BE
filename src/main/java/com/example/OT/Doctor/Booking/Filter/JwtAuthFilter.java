@@ -14,11 +14,16 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
@@ -37,10 +42,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
+    private final List<RequestMatcher> permitAllMatchers;
+    public JwtAuthFilter() {
+        this.permitAllMatchers = Arrays.asList(
+                        "/api/symptoms"
+                ).stream()
+                .map(AntPathRequestMatcher::new)
+                .collect(Collectors.toList());
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        boolean isPermitAll = permitAllMatchers.stream()
+                .anyMatch(matcher -> matcher.matches(request));
+
+        if (isPermitAll) {
+            logger.info("Bypassing JWT authentication for permitAll endpoint: {}", request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             String jwt = parseJwt(request);
             logger.info("JWT Token received: {}", jwt);
