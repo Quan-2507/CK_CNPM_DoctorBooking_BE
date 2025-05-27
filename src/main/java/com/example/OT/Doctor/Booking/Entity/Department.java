@@ -17,8 +17,11 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "name_en", nullable = false)
+    private String nameEn;
+
+    @Column(name = "name_vi", nullable = true)
+    private String nameVi;
 
     @ManyToMany(mappedBy = "departments")
     @JsonBackReference

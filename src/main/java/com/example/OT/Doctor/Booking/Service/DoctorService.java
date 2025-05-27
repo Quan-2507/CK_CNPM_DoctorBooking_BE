@@ -42,7 +42,7 @@ public class DoctorService {
                 doctor.getDegree(),
                 doctor.getConsultationHours(),
                 doctor.getImageUrl(),
-                doctor.getDepartment().getName()
+                doctor.getDepartment().getNameEn()
         );
     }
 }
