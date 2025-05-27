@@ -32,8 +32,10 @@ public class DoctorService {
                 .collect(Collectors.toList());
     }
     public DoctorDetailDTO getDoctorById(Long id) {
-        Doctor doctor = doctorRepository.findById(id)
+        Doctor doctor = doctorRepository.findByIdWithDepartment(id)
                 .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+
+        String departmentName = (doctor.getDepartment() != null) ? doctor.getDepartment().getNameEn() : "Unknown";
 
         return new DoctorDetailDTO(
                 doctor.getId(),
@@ -42,7 +44,7 @@ public class DoctorService {
                 doctor.getDegree(),
                 doctor.getConsultationHours(),
                 doctor.getImageUrl(),
-                doctor.getDepartment().getNameEn()
+                departmentName
         );
     }
 }
