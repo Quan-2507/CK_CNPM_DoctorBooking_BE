@@ -1,5 +1,6 @@
 package com.example.OT.Doctor.Booking.Controller.Admin;
 
+import com.example.OT.Doctor.Booking.DTO.Admin.DepartmentWithDoctorsDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorCreateRequestDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorResponseDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorUpdateRequestDTO;
@@ -90,9 +91,9 @@ public class AdminDoctorController {
             @ApiResponse(responseCode = "200", description = "Lấy danh sách bác sĩ thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền thực hiện")
     })
-    public ResponseEntity<List<DoctorResponseDTO>> getAllDoctors() {
-        logger.info("Received request to fetch all doctors");
-        List<DoctorResponseDTO> doctors = adminDoctorService.getAllDoctors();
+    public ResponseEntity<List<DepartmentWithDoctorsDTO>> getAllDoctors() {
+        logger.info("Received request to fetch all doctors group by department");
+        List<DepartmentWithDoctorsDTO> doctors = adminDoctorService.getAllDoctors();
         return ResponseEntity.ok(doctors);
     }
 }

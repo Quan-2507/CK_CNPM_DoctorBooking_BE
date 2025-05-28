@@ -22,8 +22,8 @@ public class Department {
 
     @Column(name = "name_vi", nullable = true)
     private String nameVi;
-
-    @ManyToMany(mappedBy = "departments")
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
     @JsonBackReference
-    private Set<Symptom> symptoms = new HashSet<>();
+    private Set<Doctor> doctors = new HashSet<>();
+
 }

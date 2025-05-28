@@ -5,9 +5,15 @@ import lombok.Getter;
 
 @Getter
 public class SymptomDTO {
-    private final String name;
+    private Long id;
+    private String nameEn;
+    private String nameVi;
+    private String description;
 
-    public SymptomDTO(Symptom symptom) {
-        this.name = symptom.getName();
+    public SymptomDTO(Long id, String nameEn, String nameVi, String description) {
+        this.id = id;
+        this.nameEn = nameEn;
+        this.nameVi = nameVi;
+        this.description = description;
     }
 }

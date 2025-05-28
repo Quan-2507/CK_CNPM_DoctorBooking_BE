@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
@@ -16,5 +17,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     // Tìm bác sĩ theo departmentId và sắp xếp theo số năm kinh nghiệm giảm dần
     @Query("SELECT d FROM Doctor d WHERE d.department.id = :departmentId ORDER BY d.experienceYears DESC")
     List<Doctor> findByDepartmentIdOrderByExperienceYearsDesc(@Param("departmentId") Long departmentId);
+
+    @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.department WHERE d.id = :id")
+    Optional<Doctor> findByIdWithDepartment(@Param("id") Long id);
 
 }
