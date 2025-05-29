@@ -1,5 +1,6 @@
 package com.example.OT.Doctor.Booking.Service.Admin;
 
+import com.example.OT.Doctor.Booking.DTO.Admin.DepartmentWithDoctorsDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorCreateRequestDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorResponseDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DoctorUpdateRequestDTO;
@@ -166,14 +167,24 @@ public class AdminDoctorService {
         logger.info("Deleted doctor with ID: {}", id);
     }
 
-    public List<DoctorResponseDTO> getAllDoctors() {
-        logger.info("Fetching all doctors");
+    public List<DepartmentWithDoctorsDTO> getAllDoctors() {
+        logger.info("Fetching doctors grouped by department");
 
-        List<Doctor> doctors = doctorRepository.findAll();
-        return doctors.stream()
-                .map(this::mapToDoctorResponseDTO)
-                .filter(response -> response != null)
-                .collect(Collectors.toList());
+        List<Department> departments = departmentRepository.findAll();
+        return departments.stream().map(department -> {
+            DepartmentWithDoctorsDTO dto = new DepartmentWithDoctorsDTO();
+            dto.setDepartmentId(department.getId());
+            dto.setDepartmentName(department.getNameEn());
+
+            List<DoctorResponseDTO> doctors = doctorRepository.findByDepartment(department)
+                    .stream()
+                    .map(this::mapToDoctorResponseDTO)
+                    .filter(response -> response != null)
+                    .collect(Collectors.toList());
+
+            dto.setDoctors(doctors);
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     private DoctorResponseDTO mapToDoctorResponseDTO(Doctor doctor) {

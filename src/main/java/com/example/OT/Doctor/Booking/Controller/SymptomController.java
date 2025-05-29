@@ -1,5 +1,6 @@
 package com.example.OT.Doctor.Booking.Controller;
 
+import com.example.OT.Doctor.Booking.DTO.SymptomDTO;
 import com.example.OT.Doctor.Booking.Entity.Symptom;
 import com.example.OT.Doctor.Booking.Service.SymptomService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,8 @@ public class SymptomController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Symptom>> searchSymptoms(@RequestParam String name) {
-        List<Symptom> symptoms = symptomService.searchSymptomsByName(name);
+    public ResponseEntity<List<SymptomDTO>> searchSymptoms(@RequestParam String name) {
+        List<SymptomDTO> symptoms = symptomService.searchSymptomsByName(name);
         return symptoms.isEmpty()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(symptoms);
