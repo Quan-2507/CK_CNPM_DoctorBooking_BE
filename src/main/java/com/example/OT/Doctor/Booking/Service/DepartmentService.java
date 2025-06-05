@@ -12,7 +12,7 @@ public class DepartmentService {
     @Autowired
     private DepartmentRepository departmentRepository;
 
-    public List<Department> getAllDepartmentsWithSymptoms() {
+    public List<Department> getAllDepartment() {
         return departmentRepository.findAll();
     }
 }

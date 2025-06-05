@@ -1,20 +1,21 @@
 package com.example.OT.Doctor.Booking.DTO;
 
 import com.example.OT.Doctor.Booking.Entity.Department;
+
 import lombok.Getter;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
+
 public class DepartmentDTO {
-    private final String departmentName;
-    private final List<SymptomDTO> symptoms;
+
+    private final Long id;
+    private final String nameVi;
+    private final String nameEn;
 
     public DepartmentDTO(Department department) {
-        this.departmentName = department.getNameEn(); // hoặc getNameVi() tuỳ bạn
-        this.symptoms = department.getSymptoms().stream()
-                .map(SymptomDTO::new)
-                .collect(Collectors.toList());
+        this.id = department.getId();
+        this.nameVi = department.getNameVi();
+        this.nameEn = department.getNameEn();
     }
 }
