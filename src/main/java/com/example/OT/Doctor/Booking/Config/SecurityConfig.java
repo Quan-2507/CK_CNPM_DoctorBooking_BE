@@ -40,6 +40,7 @@ public class SecurityConfig {
                                 "/api/symptoms/search",
                                 "/api/doctors/searchByName",
                                 "/api/doctors/department/{departmentId}",
+                                "/api/doctors/department/name/{departmentName}",
                                 "/api/doctors",
                                 "/api/doctors/{id}",
                                 "api/users/{id}",

@@ -21,4 +21,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     @Query("SELECT d FROM Doctor d LEFT JOIN FETCH d.department WHERE d.id = :id")
     Optional<Doctor> findByIdWithDepartment(@Param("id") Long id);
 
+    @Query("SELECT d FROM Doctor d JOIN d.department dept WHERE LOWER(dept.nameEn) = LOWER(:name) ORDER BY d.experienceYears DESC")
+    List<Doctor> findByDepartmentName(@Param("name") String name);
+
 }
