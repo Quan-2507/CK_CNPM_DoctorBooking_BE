@@ -67,6 +67,10 @@ public class DoctorController {
     public List<DoctorDTO> getDoctorsByDepartment(@PathVariable Long departmentId) {
         return doctorService.getDoctorsByDepartmentId(departmentId); // Trả về danh sách DoctorDTO
     }
+    @GetMapping("/department/name/{departmentName}")
+    public List<DoctorDTO> getDoctorsByDepartmentName(@PathVariable String departmentName) {
+        return doctorService.getDoctorsByDepartmentName(departmentName); // Trả về danh sách DoctorDTO
+    }
     @GetMapping("/{id}")
     public ResponseEntity<?> getDoctorById(@PathVariable Long id) {
         try {

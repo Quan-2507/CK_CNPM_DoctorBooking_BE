@@ -26,6 +26,17 @@ public class DoctorService {
         List<Doctor> doctors = doctorRepository.findByDepartmentIdOrderByExperienceYearsDesc(departmentId);
         return doctors.stream()
                 .map(doctor -> new DoctorDTO(
+                        doctor.getId(),
+                        doctor.getName(),
+                        doctor.getExperienceYears(),
+                        doctor.getImageUrl()))
+                .collect(Collectors.toList());
+    }
+    public List<DoctorDTO> getDoctorsByDepartmentName(String departmentName) {
+        List<Doctor> doctors = doctorRepository.findByDepartmentName(departmentName);
+        return doctors.stream()
+                .map(doctor -> new DoctorDTO(
+                        doctor.getId(),
                         doctor.getName(),
                         doctor.getExperienceYears(),
                         doctor.getImageUrl()))
