@@ -4,7 +4,7 @@ import com.example.OT.Doctor.Booking.DTO.Admin.DepartmentCreateRequestDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DepartmentResponseDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.DepartmentUpdateRequestDTO;
 import com.example.OT.Doctor.Booking.Entity.Department;
-import com.example.OT.Doctor.Booking.Repository.DepartmentRepository;
+import com.example.OT.Doctor.Booking.Repository.Admin.DepartmentAdminRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,29 +20,26 @@ public class AdminDepartmentService {
     private static final Logger logger = LoggerFactory.getLogger(AdminDepartmentService.class);
 
     @Autowired
-    private DepartmentRepository departmentRepository;
+    private DepartmentAdminRepository departmentRepository;
 
     @Transactional
     public DepartmentResponseDTO createDepartment(DepartmentCreateRequestDTO request) {
-
         logger.info("Creating department with nameEn: {}", request.getNameEn());
 
-        // Kiểm tra tên phòng ban (tiếng Anh) đã tồn tại
         if (departmentRepository.existsByNameEn(request.getNameEn())) {
             logger.error("Department already exists with nameEn: {}", request.getNameEn());
             throw new IllegalArgumentException("Phòng ban đã tồn tại với tên: " + request.getNameEn());
         }
-        logger.info("Creating department with nameVi: {}", request.getNameVi());
 
-        // Kiểm tra tên phòng ban (tiếng Anh) đã tồn tại
-        if (departmentRepository.existsByNameVi(request.getNameEn())) {
-            logger.error("Department already exists with nameEn: {}", request.getNameVi());
+        if (request.getNameVi() != null && departmentRepository.existsByNameVi(request.getNameVi())) {
+            logger.error("Department already exists with nameVi: {}", request.getNameVi());
             throw new IllegalArgumentException("Phòng ban đã tồn tại với tên: " + request.getNameVi());
         }
-        // Tạo department
+
         Department department = new Department();
         department.setNameEn(request.getNameEn());
         department.setNameVi(request.getNameVi());
+        department.setIsActive(1); // Mặc định là hoạt động
 
         Department savedDepartment = departmentRepository.save(department);
         logger.info("Saved department with ID: {}", savedDepartment.getId());
@@ -54,25 +51,22 @@ public class AdminDepartmentService {
     public DepartmentResponseDTO updateDepartment(Long id, DepartmentUpdateRequestDTO request) {
         logger.info("Updating department with ID: {}", id);
 
-        // Tìm department
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Department not found with ID: {}", id);
                     return new IllegalArgumentException("Phòng ban không tồn tại với ID: " + id);
                 });
 
-        // Kiểm tra tên phòng ban (tiếng Anh) nếu thay đổi
         if (!request.getNameEn().equals(department.getNameEn()) && departmentRepository.existsByNameEn(request.getNameEn())) {
             logger.error("Department already exists with nameEn: {}", request.getNameEn());
             throw new IllegalArgumentException("Phòng ban đã tồn tại với tên: " + request.getNameEn());
         }
-        // Kiểm tra tên phòng ban (tiếng Việt) nếu thay đổi
-        if (!request.getNameVi().equals(department.getNameVi()) && departmentRepository.existsByNameVi(request.getNameVi())) {
+
+        if (request.getNameVi() != null && !request.getNameVi().equals(department.getNameVi()) && departmentRepository.existsByNameVi(request.getNameVi())) {
             logger.error("Department already exists with nameVi: {}", request.getNameVi());
             throw new IllegalArgumentException("Phòng ban đã tồn tại với tên: " + request.getNameVi());
         }
 
-        // Cập nhật department
         department.setNameEn(request.getNameEn());
         department.setNameVi(request.getNameVi());
 
@@ -84,7 +78,7 @@ public class AdminDepartmentService {
 
     @Transactional
     public void deleteDepartment(Long id) {
-        logger.info("Deleting department with ID: {}", id);
+        logger.info("Deactivating department with ID: {}", id);
 
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> {
@@ -92,20 +86,20 @@ public class AdminDepartmentService {
                     return new IllegalArgumentException("Phòng ban không tồn tại với ID: " + id);
                 });
 
-        // Kiểm tra xem phòng ban có bác sĩ nào không
-        if (!department.getDoctors().isEmpty()) {
-            logger.error("Cannot delete department with ID: {} because it has associated doctors", id);
-            throw new IllegalArgumentException("Không thể xóa phòng ban vì có bác sĩ liên kết");
+        if (department.getDoctors().stream().anyMatch(doctor -> doctor.getIsActive() == 1)) {
+            logger.error("Cannot deactivate department with ID: {} because it has active associated doctors", id);
+            throw new IllegalArgumentException("Không thể vô hiệu hóa phòng ban vì có bác sĩ hoạt động liên kết");
         }
 
-        departmentRepository.delete(department);
-        logger.info("Deleted department with ID: {}", id);
+        department.setIsActive(0); // Chuyển trạng thái thành không hoạt động
+        departmentRepository.save(department);
+        logger.info("Deactivated department with ID: {}", id);
     }
 
     public List<DepartmentResponseDTO> getAllDepartments() {
-        logger.info("Fetching all departments");
+        logger.info("Fetching all active departments");
 
-        List<Department> departments = departmentRepository.findAll();
+        List<Department> departments = departmentRepository.findByIsActive(1);
         return departments.stream()
                 .map(this::mapToDepartmentResponseDTO)
                 .collect(Collectors.toList());

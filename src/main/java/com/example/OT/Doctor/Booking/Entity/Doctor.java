@@ -46,5 +46,8 @@ public class Doctor {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Liên kết với User để lấy username và role
+    private User user;
+
+    @Column(name = "is_active", nullable = false, columnDefinition = "INTEGER DEFAULT 1")
+    private Integer isActive;
 }

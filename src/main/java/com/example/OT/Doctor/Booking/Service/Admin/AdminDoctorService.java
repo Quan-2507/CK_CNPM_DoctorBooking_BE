@@ -8,7 +8,7 @@ import com.example.OT.Doctor.Booking.Entity.Department;
 import com.example.OT.Doctor.Booking.Entity.Doctor;
 import com.example.OT.Doctor.Booking.Entity.User;
 import com.example.OT.Doctor.Booking.Enum.Role;
-import com.example.OT.Doctor.Booking.Repository.DepartmentRepository;
+import com.example.OT.Doctor.Booking.Repository.Admin.DepartmentAdminRepository;
 import com.example.OT.Doctor.Booking.Repository.Admin.DoctorAdminRepository;
 import com.example.OT.Doctor.Booking.Repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -32,7 +32,7 @@ public class AdminDoctorService {
     private DoctorAdminRepository doctorRepository;
 
     @Autowired
-    private DepartmentRepository departmentRepository;
+    private DepartmentAdminRepository departmentRepository;
 
     @Transactional
     public DoctorResponseDTO createDoctor(DoctorCreateRequestDTO request) {
@@ -73,6 +73,7 @@ public class AdminDoctorService {
         doctor.setRating(request.getRating());
         doctor.setAbout(request.getAbout());
         doctor.setImageUrl(request.getImageUrl());
+        doctor.setIsActive(1); // Mặc định là hoạt động
 
         Doctor savedDoctor = doctorRepository.save(doctor);
         logger.info("Saved doctor with ID: {}", savedDoctor.getId());
@@ -90,6 +91,11 @@ public class AdminDoctorService {
                     return new IllegalArgumentException("Bác sĩ không tồn tại với ID: " + id);
                 });
 
+        if (doctor.getIsActive() == 0) {
+            logger.warn("Doctor with ID: {} is inactive", id);
+            throw new IllegalArgumentException("Bác sĩ không hoạt động với ID: " + id);
+        }
+
         return mapToDoctorResponseDTO(doctor);
     }
 
@@ -103,7 +109,6 @@ public class AdminDoctorService {
                     return new IllegalArgumentException("Bác sĩ không tồn tại với ID: " + id);
                 });
 
-        // Kiểm tra user_id nếu thay đổi
         if (request.getUserId() != null && !request.getUserId().equals(doctor.getUser().getId())) {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> {
@@ -125,7 +130,6 @@ public class AdminDoctorService {
             doctor.setUser(user);
         }
 
-        // Kiểm tra và cập nhật department
         if (request.getDepartmentId() != null) {
             Department department = departmentRepository.findById(request.getDepartmentId())
                     .orElseThrow(() -> {
@@ -135,7 +139,6 @@ public class AdminDoctorService {
             doctor.setDepartment(department);
         }
 
-        // Cập nhật các trường khác nếu có
         if (request.getName() != null) doctor.setName(request.getName());
         if (request.getPhoneNumber() != null) doctor.setPhoneNumber(request.getPhoneNumber());
         if (request.getEmail() != null) doctor.setEmail(request.getEmail());
@@ -154,7 +157,7 @@ public class AdminDoctorService {
 
     @Transactional
     public void deleteDoctor(Long id) {
-        logger.info("Deleting doctor with ID: {}", id);
+        logger.info("Deactivating doctor with ID: {}", id);
 
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> {
@@ -162,27 +165,21 @@ public class AdminDoctorService {
                     return new IllegalArgumentException("Bác sĩ không tồn tại với ID: " + id);
                 });
 
-        User user = doctor.getUser();
-        if (user != null && user.getRole() == Role.DOCTOR) {
-            logger.info("Changing user role from DOCTOR to PATIENT for user ID: {}", user.getId());
-            user.setRole(Role.PATIENT);
-            userRepository.save(user);
-        }
-
-        doctorRepository.delete(doctor);
-        logger.info("Deleted doctor with ID: {}", id);
+        doctor.setIsActive(0); // Chuyển trạng thái thành không hoạt động
+        doctorRepository.save(doctor);
+        logger.info("Deactivated doctor with ID: {}", id);
     }
 
     public List<DepartmentWithDoctorsDTO> getAllDoctors() {
         logger.info("Fetching doctors grouped by department");
 
-        List<Department> departments = departmentRepository.findAll();
+        List<Department> departments = departmentRepository.findByIsActive(1);
         return departments.stream().map(department -> {
             DepartmentWithDoctorsDTO dto = new DepartmentWithDoctorsDTO();
             dto.setDepartmentId(department.getId());
             dto.setDepartmentName(department.getNameEn());
 
-            List<DoctorResponseDTO> doctors = doctorRepository.findByDepartment(department)
+            List<DoctorResponseDTO> doctors = doctorRepository.findByDepartmentAndIsActive(department, 1)
                     .stream()
                     .map(this::mapToDoctorResponseDTO)
                     .filter(response -> response != null)
