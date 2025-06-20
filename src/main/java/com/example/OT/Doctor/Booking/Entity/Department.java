@@ -22,8 +22,11 @@ public class Department {
 
     @Column(name = "name_vi", nullable = true)
     private String nameVi;
+
     @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
     @JsonBackReference
     private Set<Doctor> doctors = new HashSet<>();
 
+    @Column(name = "is_active", nullable = false, columnDefinition = "INTEGER DEFAULT 1")
+    private Integer isActive;
 }

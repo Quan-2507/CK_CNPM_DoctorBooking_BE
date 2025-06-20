@@ -4,7 +4,7 @@ import com.example.OT.Doctor.Booking.DTO.Admin.SymptomCreateRequestDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.SymptomResponseDTO;
 import com.example.OT.Doctor.Booking.DTO.Admin.SymptomUpdateRequestDTO;
 import com.example.OT.Doctor.Booking.Entity.Symptom;
-import com.example.OT.Doctor.Booking.Repository.SymptomRepository;
+import com.example.OT.Doctor.Booking.Repository.Admin.SymptomAdminRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class AdminSymptomService {
     private static final Logger logger = LoggerFactory.getLogger(AdminSymptomService.class);
 
     @Autowired
-    private SymptomRepository symptomRepository;
+    private SymptomAdminRepository symptomRepository;
 
     @Transactional
     public SymptomResponseDTO createSymptom(SymptomCreateRequestDTO request) {
@@ -31,6 +31,7 @@ public class AdminSymptomService {
         symptom.setNameEn(request.getNameEn());
         symptom.setNameVi(request.getNameVi());
         symptom.setDescription(request.getDescription());
+        symptom.setIsActive(1); // Mặc định là hoạt động
 
         try {
             Symptom savedSymptom = symptomRepository.save(symptom);
@@ -70,21 +71,23 @@ public class AdminSymptomService {
 
     @Transactional
     public void deleteSymptom(Long id) {
-        logger.info("Deleting symptom with ID: {}", id);
+        logger.info("Deactivating symptom with ID: {}", id);
 
         Symptom symptom = symptomRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Symptom not found with ID: {}", id);
                     return new IllegalArgumentException("Triệu chứng không tồn tại với ID: " + id);
                 });
-        symptomRepository.delete(symptom);
-        logger.info("Deleted symptom with ID: {}", id);
+
+        symptom.setIsActive(0); // Chuyển trạng thái thành không hoạt động
+        symptomRepository.save(symptom);
+        logger.info("Deactivated symptom with ID: {}", id);
     }
 
     public List<SymptomResponseDTO> getAllSymptoms() {
-        logger.info("Fetching all symptoms");
+        logger.info("Fetching all active symptoms");
 
-        List<Symptom> symptoms = symptomRepository.findAll();
+        List<Symptom> symptoms = symptomRepository.findByIsActive(1);
         return symptoms.stream()
                 .map(this::mapToSymptomResponseDTO)
                 .collect(Collectors.toList());
