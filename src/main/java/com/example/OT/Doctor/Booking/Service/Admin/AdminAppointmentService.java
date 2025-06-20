@@ -50,6 +50,7 @@ public class AdminAppointmentService {
         dto.setStartTime(appointment.getSchedule() != null ? appointment.getSchedule().getStartTime() : null);
         dto.setEndTime(appointment.getSchedule() != null ? appointment.getSchedule().getEndTime() : null);
         dto.setDoctorName(appointment.getDoctor() != null ? appointment.getDoctor().getName() : null);
+        dto.setAppointmentNumber(appointment.getAppointmentNumber());
         dto.setUserName(appointment.getUser() != null ? appointment.getUser().getUsername() : null);
         return dto;
     }

@@ -16,5 +16,6 @@ public class AppointmentResponseDTO {
     private LocalTime startTime;
     private LocalTime endTime;
     private String doctorName;
+    private Integer appointmentNumber;
     private String userName;
 }
