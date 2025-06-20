@@ -15,8 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -32,14 +30,12 @@ public class AuthService {
     private JwtUtils jwtUtils;
 
     public ResponseEntity<?> registerUser(SignUpDTO signUpRequest) {
-
-
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity.badRequest().body("Email đã tồn tại!");
         }
 
         User user = new User();
-        user.setUsername(signUpRequest.getUsername());
+        user.setUsername(signUpRequest.getUsername()); // Username có thể trùng
         user.setEmail(signUpRequest.getEmail());
         user.setPhoneNumber(signUpRequest.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
@@ -51,13 +47,8 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest loginRequest) {
-        Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
-
-        if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("Email không tồn tại");
-        }
-
-        User user = userOptional.get();
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu không chính xác");
@@ -76,32 +67,28 @@ public class AuthService {
         user.setVerifyCodeExpiry(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
 
-        // Gửi email với verifyCode (giả lập, cần tích hợp dịch vụ email thực tế)
         System.out.println("Verification code for " + email + ": " + verifyCode);
     }
 
     public void resetPassword(ResetPaswordRequest resetPaswordRequest) {
-        // Lấy username từ SecurityContext (người dùng đã xác thực)
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        // Lấy userId từ SecurityContext
+        String userIdStr = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        Long userId = Long.valueOf(userIdStr);
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Kiểm tra mật khẩu hiện tại
         if (!passwordEncoder.matches(resetPaswordRequest.getCurrentPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không đúng");
         }
 
-        // Kiểm tra mật khẩu mới và xác nhận mật khẩu có khớp không
         if (!resetPaswordRequest.getNewPassword().equals(resetPaswordRequest.getConfirmPassword())) {
             throw new IllegalArgumentException("Xác nhận mật khẩu không khớp");
         }
 
-        // Kiểm tra mật khẩu mới không trùng với mật khẩu hiện tại
         if (passwordEncoder.matches(resetPaswordRequest.getNewPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu hiện tại");
         }
 
-        // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(resetPaswordRequest.getNewPassword()));
         userRepository.save(user);
     }

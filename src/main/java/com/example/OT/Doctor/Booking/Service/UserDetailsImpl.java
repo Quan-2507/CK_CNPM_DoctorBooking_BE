@@ -25,7 +25,6 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl build(User user) {
-        // Gán role với prefix "ROLE_"
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
         return new UserDetailsImpl(
                 user.getId(),
@@ -34,6 +33,10 @@ public class UserDetailsImpl implements UserDetails {
                 user.getPassword(),
                 Collections.singletonList(authority)
         );
+    }
+
+    public Long getId() {
+        return id;
     }
 
     @Override
