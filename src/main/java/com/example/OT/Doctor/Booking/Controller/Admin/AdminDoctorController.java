@@ -46,6 +46,25 @@ public class AdminDoctorController {
         }
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lấy thông tin bác sĩ theo ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lấy thông tin bác sĩ thành công"),
+            @ApiResponse(responseCode = "404", description = "Bác sĩ không tồn tại"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền thực hiện")
+    })
+    public ResponseEntity<?> getDoctorById(@PathVariable Long id) {
+        logger.info("Received request to fetch doctor with ID: {}", id);
+        try {
+            DoctorResponseDTO response = adminDoctorService.getDoctorById(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error fetching doctor: {}", e.getMessage());
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Cập nhật thông tin bác sĩ")
