@@ -36,7 +36,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
-
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
         }
@@ -47,10 +46,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     public JwtAuthFilter() {
         this.permitAllMatchers = Arrays.asList(
-                        "/api/symptoms"
-                ).stream()
-                .map(AntPathRequestMatcher::new)
-                .collect(Collectors.toList());
+                new AntPathRequestMatcher("/api/symptoms")
+        ).stream().collect(Collectors.toList());
     }
 
     @Override
@@ -72,11 +69,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Long userId = jwtUtils.getUserIdFromJwtToken(jwt);
                 logger.info("Extracted userId from token: {}", userId);
 
-                // Optional: lấy username từ claim (để log, không để xác thực)
-                String username = jwtUtils.getClaimFromJwtToken(jwt, "username");
-                logger.info("Username (for display/log only): {}", username);
-
-                // Lấy role từ token
                 String role = jwtUtils.getClaimFromJwtToken(jwt, "role");
                 if (role == null) {
                     logger.warn("No role found in token for userId: {}", userId);
@@ -84,12 +76,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
                 logger.info("Role extracted from token: {}", role);
 
-                // Lấy UserDetails từ userId
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
                 UserDetails userDetails = userDetailsService.loadUserById(userId);
                 logger.info("User authorities from database: {}", userDetails.getAuthorities());
-
-                // Gán quyền từ token
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, Collections.singletonList(authority));
@@ -102,7 +91,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());
         }
-
         filterChain.doFilter(request, response);
     }
 }
