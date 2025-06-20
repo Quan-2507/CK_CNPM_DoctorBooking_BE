@@ -5,7 +5,6 @@ import com.example.OT.Doctor.Booking.DTO.UserInfoDTO;
 import com.example.OT.Doctor.Booking.Entity.User;
 import com.example.OT.Doctor.Booking.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,8 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
+    // Dùng khi bạn xác thực qua username (vẫn giữ để dùng ở các chỗ khác nếu có)
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -26,6 +26,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return UserDetailsImpl.build(user);
     }
 
+    // Dùng khi xác thực qua ID (từ JWT token)
+    @Transactional
+    public UserDetails loadUserById(Long id) throws UsernameNotFoundException {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with ID: " + id));
+        return UserDetailsImpl.build(user);
+    }
+
+    // Trả về thông tin người dùng (không bao gồm password)
     public UserInfoDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -37,6 +46,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getGender() != null ? user.getGender().name() : null
         );
     }
+
+    // Chỉnh sửa thông tin user qua username
     @Transactional
     public UserInfoDTO editUser(String username, UserEditDTO userEditDTO) {
         User user = userRepository.findByUsername(username)
@@ -50,22 +61,22 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             user.setEmail(userEditDTO.getEmail());
         }
 
-        // Kiểm tra username nếu thay đổi
-
-            if (userEditDTO.getUsername() != null) {
-
+        // Cập nhật username nếu có
+        if (userEditDTO.getUsername() != null) {
             user.setUsername(userEditDTO.getUsername());
         }
 
-        // Cập nhật phoneNumber
+        // Cập nhật số điện thoại
         if (userEditDTO.getPhoneNumber() != null) {
             user.setPhoneNumber(userEditDTO.getPhoneNumber());
         }
-        // Cập nhật address
+
+        // Cập nhật địa chỉ
         if (userEditDTO.getAddress() != null) {
             user.setAddress(userEditDTO.getAddress());
         }
-// Cập nhật gender
+
+        // Cập nhật giới tính
         if (userEditDTO.getGender() != null) {
             user.setGender(userEditDTO.getGender());
         }
@@ -73,7 +84,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // Lưu thay đổi
         userRepository.save(user);
 
-        // Trả về thông tin người dùng đã cập nhật
+        // Trả về thông tin đã cập nhật
         return new UserInfoDTO(
                 user.getEmail(),
                 user.getPhoneNumber(),
@@ -81,6 +92,5 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getAddress(),
                 user.getGender() != null ? user.getGender().name() : null
         );
-
     }
 }
