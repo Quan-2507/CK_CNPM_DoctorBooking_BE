@@ -32,9 +32,7 @@ public class AuthService {
     private JwtUtils jwtUtils;
 
     public ResponseEntity<?> registerUser(SignUpDTO signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity.badRequest().body("Username đã tồn tại!");
-        }
+
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity.badRequest().body("Email đã tồn tại!");
