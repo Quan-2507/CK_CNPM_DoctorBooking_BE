@@ -5,6 +5,7 @@ import com.example.OT.Doctor.Booking.DTO.UserInfoDTO;
 import com.example.OT.Doctor.Booking.Entity.User;
 import com.example.OT.Doctor.Booking.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,26 +16,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
-    // Dùng khi bạn xác thực qua username (vẫn giữ để dùng ở các chỗ khác nếu có)
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Giữ lại để hỗ trợ các chức năng cũ (nếu cần)
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
         return UserDetailsImpl.build(user);
     }
 
-    // Dùng khi xác thực qua ID (từ JWT token)
     @Transactional
-    public UserDetails loadUserById(Long id) throws UsernameNotFoundException {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with ID: " + id));
+    public UserDetails loadUserById(Long userId) throws UsernameNotFoundException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with userId: " + userId));
         return UserDetailsImpl.build(user);
     }
 
-    // Trả về thông tin người dùng (không bao gồm password)
     public UserInfoDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -47,11 +46,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         );
     }
 
-    // Chỉnh sửa thông tin user qua username
     @Transactional
-    public UserInfoDTO editUser(String username, UserEditDTO userEditDTO) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+    public UserInfoDTO editUser(Long userId, UserEditDTO userEditDTO) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with userId: " + userId));
 
         // Kiểm tra email nếu thay đổi
         if (userEditDTO.getEmail() != null && !userEditDTO.getEmail().equals(user.getEmail())) {
@@ -61,22 +59,22 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             user.setEmail(userEditDTO.getEmail());
         }
 
-        // Cập nhật username nếu có
+        // Cập nhật username (cho phép trùng lặp)
         if (userEditDTO.getUsername() != null) {
             user.setUsername(userEditDTO.getUsername());
         }
 
-        // Cập nhật số điện thoại
+        // Cập nhật phoneNumber
         if (userEditDTO.getPhoneNumber() != null) {
             user.setPhoneNumber(userEditDTO.getPhoneNumber());
         }
 
-        // Cập nhật địa chỉ
+        // Cập nhật address
         if (userEditDTO.getAddress() != null) {
             user.setAddress(userEditDTO.getAddress());
         }
 
-        // Cập nhật giới tính
+        // Cập nhật gender
         if (userEditDTO.getGender() != null) {
             user.setGender(userEditDTO.getGender());
         }
@@ -84,7 +82,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // Lưu thay đổi
         userRepository.save(user);
 
-        // Trả về thông tin đã cập nhật
+        // Trả về thông tin người dùng đã cập nhật
         return new UserInfoDTO(
                 user.getEmail(),
                 user.getPhoneNumber(),
