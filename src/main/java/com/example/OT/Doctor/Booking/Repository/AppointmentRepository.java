@@ -18,8 +18,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findUpcomingByDoctorId(@Param("doctorId") Long doctorId, @Param("now") LocalDateTime now);
 
     @Query("SELECT new com.example.OT.Doctor.Booking.DTO.HistoryAppointmentDTO(" +
-            "a.appointmentNumber, a.appointmentTime) " +
-            "FROM Appointment a WHERE a.user.id = :userId ORDER BY a.appointmentDate DESC")
+            "a.appointmentNumber, a.schedule.date, a.schedule.startTime) " +
+            "FROM Appointment a WHERE a.user.id = :userId ORDER BY a.schedule.date DESC")
     List<HistoryAppointmentDTO> findHistoryByUserId(@Param("userId") Long userId);
+
 
 }
