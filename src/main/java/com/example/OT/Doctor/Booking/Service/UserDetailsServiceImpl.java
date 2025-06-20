@@ -51,10 +51,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         // Kiểm tra username nếu thay đổi
-        if (userEditDTO.getUsername() != null && !userEditDTO.getUsername().equals(user.getUsername())) {
-            if (userRepository.existsByUsername(userEditDTO.getUsername())) {
-                throw new RuntimeException("Username đã được sử dụng");
-            }
+
+            if (userEditDTO.getUsername() != null) {
+
             user.setUsername(userEditDTO.getUsername());
         }
 
