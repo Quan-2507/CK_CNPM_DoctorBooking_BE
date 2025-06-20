@@ -38,7 +38,6 @@ public class AdminDoctorService {
     public DoctorResponseDTO createDoctor(DoctorCreateRequestDTO request) {
         logger.info("Creating doctor with user_id: {}", request.getUserId());
 
-        // Kiểm tra user_id tồn tại và có role DOCTOR
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> {
                     logger.error("User not found with ID: {}", request.getUserId());
@@ -51,20 +50,17 @@ public class AdminDoctorService {
             userRepository.save(user);
         }
 
-        // Kiểm tra department
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> {
                     logger.error("Department not found with ID: {}", request.getDepartmentId());
                     return new IllegalArgumentException("Phòng ban không tồn tại với ID: " + request.getDepartmentId());
                 });
 
-        // Kiểm tra xem doctor đã tồn tại cho user_id
         if (doctorRepository.findByUserId(request.getUserId()).isPresent()) {
             logger.error("Doctor already exists for user ID: {}", request.getUserId());
             throw new IllegalArgumentException("Bác sĩ đã tồn tại cho user ID: " + request.getUserId());
         }
 
-        // Tạo doctor
         Doctor doctor = new Doctor();
         doctor.setUser(user);
         doctor.setName(request.getName());
@@ -85,10 +81,22 @@ public class AdminDoctorService {
     }
 
     @Transactional
+    public DoctorResponseDTO getDoctorById(Long id) {
+        logger.info("Fetching doctor with ID: {}", id);
+
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Doctor not found with ID: {}", id);
+                    return new IllegalArgumentException("Bác sĩ không tồn tại với ID: " + id);
+                });
+
+        return mapToDoctorResponseDTO(doctor);
+    }
+
+    @Transactional
     public DoctorResponseDTO updateDoctor(Long id, DoctorUpdateRequestDTO request) {
         logger.info("Updating doctor with ID: {}", id);
 
-        // Tìm doctor
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error("Doctor not found with ID: {}", id);
@@ -117,19 +125,18 @@ public class AdminDoctorService {
             doctor.setUser(user);
         }
 
-        // Kiểm tra department nếu thay đổi
-        Department department = doctor.getDepartment();
-        if (request.getDepartmentId() != null && !request.getDepartmentId().equals(department.getId())) {
-            department = departmentRepository.findById(request.getDepartmentId())
+        // Kiểm tra và cập nhật department
+        if (request.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(request.getDepartmentId())
                     .orElseThrow(() -> {
                         logger.error("Department not found with ID: {}", request.getDepartmentId());
                         return new IllegalArgumentException("Phòng ban không tồn tại với ID: " + request.getDepartmentId());
                     });
+            doctor.setDepartment(department);
         }
 
-        // Cập nhật doctor
+        // Cập nhật các trường khác nếu có
         if (request.getName() != null) doctor.setName(request.getName());
-        doctor.setDepartment(department);
         if (request.getPhoneNumber() != null) doctor.setPhoneNumber(request.getPhoneNumber());
         if (request.getEmail() != null) doctor.setEmail(request.getEmail());
         if (request.getExperienceYears() != null) doctor.setExperienceYears(request.getExperienceYears());
@@ -155,7 +162,6 @@ public class AdminDoctorService {
                     return new IllegalArgumentException("Bác sĩ không tồn tại với ID: " + id);
                 });
 
-        // Lấy user liên kết và đổi role thành PATIENT
         User user = doctor.getUser();
         if (user != null && user.getRole() == Role.DOCTOR) {
             logger.info("Changing user role from DOCTOR to PATIENT for user ID: {}", user.getId());
