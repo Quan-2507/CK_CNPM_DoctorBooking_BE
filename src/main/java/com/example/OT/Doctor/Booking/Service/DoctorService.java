@@ -46,7 +46,8 @@ public class DoctorService {
         Doctor doctor = doctorRepository.findByIdWithDepartment(id)
                 .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
 
-        String departmentName = (doctor.getDepartment() != null) ? doctor.getDepartment().getNameEn() : "Unknown";
+        String departmentNameVi = (doctor.getDepartment() != null) ? doctor.getDepartment().getNameVi(): "Unknown";
+        String departmentNameEn = (doctor.getDepartment() != null) ? doctor.getDepartment().getNameEn(): "Unknown";
 
         return new DoctorDetailDTO(
                 doctor.getId(),
@@ -55,7 +56,8 @@ public class DoctorService {
                 doctor.getDegree(),
                 doctor.getConsultationHours(),
                 doctor.getImageUrl(),
-                departmentName
+                departmentNameVi,
+                departmentNameEn
         );
     }
 }
